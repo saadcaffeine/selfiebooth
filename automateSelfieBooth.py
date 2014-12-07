@@ -2,15 +2,24 @@ import time
 import picamera
 import sys
 import RPi.GPIO as GPIO 
+from twython import Twython
 from datetime import datetime
 
 lightStrip = 25
 buttSensor = 24
 selfieCounter = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+APP_KEY = 'YOUR_APP_KEY'
+APP_SECRET = 'YOUR_APP_SECRET'
+ACCESS_TOKEN = ' '
 
 GPIO.setmode(GPIO.BCM) 
 GPIO.setup(buttSensor, GPIO.IN, GPIO.PUD_DOWN)  # buttSensor PUD UP
 GPIO.setup(lightStrip, GPIO.OUT)
+
+def initTwit():
+	twit = Twython(APP_KEY, APP_SECRET, oauth_version=2)
+	ACCESS_TOKEN = twitter.obtain_access_token()
+	#handle exceptions
 
 def takeSelfie():
 	with picamera.PiCamera() as camera:
@@ -50,6 +59,7 @@ def pushNotification(message):
 # init test
 pushNotification("Started UP! " + str(selfieCounter))
 takeSelfie()
+
 # Loop forever
 while True:
 	GPIO.wait_for_edge(buttSensor, GPIO.RISING)  # butt on
@@ -62,6 +72,8 @@ while True:
 		time.sleep(3);
 	#GPIO.wait_for_edge(buttSensor, GPIO.FALLING) # butt off
 	print("butt off")
+	#smooth out jitters
+	#pending buttSensor 
 	GPIO.cleanup(buttSensor)
 	GPIO.setup(buttSensor, GPIO.IN, GPIO.PUD_DOWN)
 		
