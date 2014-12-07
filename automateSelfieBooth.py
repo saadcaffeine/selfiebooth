@@ -21,6 +21,10 @@ def initTwit():
 	ACCESS_TOKEN = twitter.obtain_access_token()
 	#handle exceptions
 
+def doTwit()
+	photo = open('/var/www/selfies/selfie.jpg', 'rb')
+	twitter.update_status_with_media(status='butt activated selfie ', media=photo)
+
 def takeSelfie():
 	with picamera.PiCamera() as camera:
 		camera.led = False
