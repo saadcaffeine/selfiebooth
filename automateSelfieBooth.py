@@ -21,7 +21,7 @@ def initTwit():
 	ACCESS_TOKEN = twitter.obtain_access_token()
 	#handle exceptions
 
-def doTwit()
+def doTwit():
 	photo = open('/var/www/selfies/selfie.jpg', 'rb')
 	twitter.update_status_with_media(status='butt activated selfie ', media=photo)
 
@@ -31,10 +31,11 @@ def takeSelfie():
     		camera.start_preview() # look at the little red light
     		camera.led = False
     		GPIO.output(lightStrip,1)
-    		camera.resolution = (1280, 1280)
+    		camera.resolution = (800, 800)
     		camera.framerate = 30
 		camera.led = True
-		camera.capture('/var/www/selfies/selfie.jpg') # todo: parameterize 
+		camera.capture('/var/www/selfies/selfie.jpg')
+		camera.capture('/var/www/selfies/selfie0.jpg') # todo: parameterize 
     		#todo: trigger php
 		camera.led = False
 		camera.led = True
