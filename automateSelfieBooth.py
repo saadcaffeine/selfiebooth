@@ -35,9 +35,8 @@ def selfieCounter():
 
 def doGram():
 	GPIO.output(lightStrip,1) #activates relay ON
-	#photo = open('/var/www/selfies/selfie.jpg', 'rb')
 	#handoff to PHP
-	subprocess.call("php /home/sb/insta.php", shell=True)
+	subprocess.call("php /home/pi/sb/insta.php", shell=True)
 	time.sleep(1)
 	GPIO.output(lightStrip,0) #activates relay ON	
 def takeSelfie():
