@@ -18,33 +18,28 @@ buttSensor = 23
 led3 = 16
 led2 = 20
 led1 = 21
-#selfieCounter = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+noButts = 1
 apiKey = caffk.api_key
 GPIO.setmode(GPIO.BCM) 
-GPIO.setup(buttSensor, GPIO.IN, GPIO.PUD_DOWN)  # buttSensor goes from UP to 3.3v
+GPIO.setup(buttSensor, GPIO.IN, GPIO.PUD_DOWN)  # buttSensor goes from 0 to 3.3v
 GPIO.setup(lightStrip, GPIO.OUT)
 GPIO.setup(led3,GPIO.OUT)
 GPIO.setup(led2,GPIO.OUT)
 GPIO.setup(led1,GPIO.OUT)
 GPIO.setup(24, GPIO.IN, GPIO.PUD_DOWN) #quit trigger 24 goes 0 to 1 3.3v
-down = 0
 
+print datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def selfieCounter():
 	return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def doGram():
+	GPIO.output(lightStrip,1) #activates relay ON
 	#photo = open('/var/www/selfies/selfie.jpg', 'rb')
 	#handoff to PHP
 	subprocess.call("php /home/sb/insta.php", shell=True)
-
-def get_ip(ifname):
-	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    	return socket.inet_ntoa(fcntl.ioctl(
-        	s.fileno(), 0x8915,  # SIOCGIFADDR
-        	struct.pack('256s', ifname[:15])
-	)[20:24])
-
+	time.sleep(1)
+	GPIO.output(lightStrip,0) #activates relay ON	
 def takeSelfie():
 		GPIO.output(led3,0) #LED OFF
 		time.sleep(1)
@@ -55,15 +50,27 @@ def takeSelfie():
 		GPIO.output(lightStrip,1) #activates relay ON
 		#using USB camera via fswebcam
 		print("selfie ") 
-		subprocess.call("fswebcam -r 640x480 --save /home/pi/sb/selfie.jpg", shell = True)
+		subprocess.call("fswebcam -r 640x480 --no-banner --save /home/pi/sb/selfie.jpg", shell = True)
 		print selfieCounter()
     		GPIO.output(lightStrip,0) #activates relay OFF
 def initButt():
-		GPIO.output(led3,1) #LED ON
+		GPIO.output(led1,1) #LED ON
 		time.sleep(0.2)	
 		GPIO.output(led2,1) #LED ON
 		time.sleep(0.2)
-		GPIO.output(led1,1) #LED ON
+		GPIO.output(led3,1) #LED ON
+		time.sleep(0.2)
+
+def testButt():
+		initButt()
+		GPIO.output(lightStrip,1) #activates relay ON
+		time.sleep(2)
+		GPIO.output(lightStrip,0) #activates relay Off
+		GPIO.output(led3,0) #LED Off
+		time.sleep(0.2)	
+		GPIO.output(led2,0) #LED Off
+		time.sleep(0.2)
+		GPIO.output(led1,0) #LED Off
 
 def pushNotification(message):
 	try:
@@ -90,42 +97,40 @@ def pushSelfie(message):
                 print(e)
 
 def buttCallback(channel):
-	#only if rising. else ignore.
-	global down
-	if(down):
-		print "butt gone"
-		down = 0
+	global noButts
+	time.sleep(1)
+	if(noButts):
+		print "butt gone. fine. be that way."
 	else:
-		down = 1
 		initButt()
-		print "BUTT!"
 		print str(channel) + ": " + selfieCounter() 
 		time.sleep(1)
 		takeSelfie()
-
-def falseCallback(channel):
-	print "false"
-
-#TODO: init self test
-# get IP, push it out
-#wip = get_ip('wlan0')
-#pushNotification("SelfieBooth UP! " + " " + selfieCounter())
+		doGram()
+		pushNotification("#selfied " + selfieCounter())
+		
+def haltCallback(channel):
+	print "Rising edge detected on port 24. Here endeth the lesson."  
+	GPIO.cleanup()           # clean up GPIO on normal exit 
 
 # uses threaded callback
-GPIO.add_event_detect(buttSensor, GPIO.RISING, callback=buttCallback, bouncetime=1200)
-#GPIO.add_event_detect(buttSensor, GPIO.FALLING, callback=falseCallback)
+GPIO.add_event_detect(buttSensor, GPIO.RISING, callback=buttCallback, bouncetime=600)
+GPIO.add_event_detect(24, GPIO.RISING, callback=haltCallback)
 
 #init
 
-
 #except KeyboardInterrupt:
 try:  
-    print "Waiting for rising edge on port 24"  
-    GPIO.wait_for_edge(24, GPIO.RISING)  
-    print "Rising edge detected on port 24. Here endeth the lesson."  
-  
+    testButt()
+    pushNotification("SelfieBooth UP! " + " " + selfieCounter())
+
+    while(1):
+	#loops until keybaord interrupt or haltCallback
+	if(GPIO.input(buttSensor)):
+		noButts = 0
+	else:
+		noButts = 1
+    	time.sleep(0.5)
 except KeyboardInterrupt:  
     GPIO.cleanup()       # clean up GPIO on CTRL+C exit  
 GPIO.cleanup()           # clean up GPIO on normal exit 
-
-
