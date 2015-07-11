@@ -18,6 +18,7 @@ buttSensor = 23
 led3 = 16
 led2 = 20
 led1 = 21
+ledStatus = 26
 noButts = 1
 apiKey = caffk.api_key
 GPIO.setmode(GPIO.BCM) 
@@ -28,37 +29,51 @@ GPIO.setup(led2,GPIO.OUT)
 GPIO.setup(led1,GPIO.OUT)
 GPIO.setup(24, GPIO.IN, GPIO.PUD_DOWN) #quit trigger 24 goes 0 to 1 3.3v
 
+GPIO.setup(ledStatus, GPIO.OUT)
+GPIO.output(ledStatus, 1) # selfie booth running
+
 print datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def selfieCounter():
 	return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def doGram():
-	GPIO.output(lightStrip,1) #activates relay ON
+	#GPIO.output(lightStrip,1) #activates relay ON
 	#handoff to PHP
 	subprocess.call("php /home/pi/sb/insta.php", shell=True)
 	time.sleep(1)
-	GPIO.output(lightStrip,0) #activates relay ON	
+	#GPIO.output(lightStrip,0) #activates relay ON	
 def takeSelfie():
-		GPIO.output(led3,0) #LED OFF
+		GPIO.output(led3,0) #LED 3 OFF
+		GPIO.output(led2,1) #LED 2 ON
 		time.sleep(1)
-		GPIO.output(led2,0) #LED OFF
-		time.sleep(1)
-		GPIO.output(led1,0) #LED OFF
-		time.sleep(1)
+		GPIO.output(led2,0) #LED 2 OFF
+		GPIO.output(led1,1) #LED 1 ON
+		time.sleep(0.6)
+		GPIO.output(led1,0)
+		time.sleep(0.2)
+		GPIO.output(led1,1)
+		time.sleep(0.4)
+		GPIO.output(led1,0)
+		time.sleep(0.2)
+		GPIO.output(led1,1)
+		time.sleep(0.4)
+		GPIO.output(led1,0) #LED 1 OFF
+		time.sleep(0.1)
 		GPIO.output(lightStrip,1) #activates relay ON
 		#using USB camera via fswebcam
+		time.sleep(0.4)
 		print("selfie ") 
 		subprocess.call("fswebcam -r 640x480 --no-banner --save /home/pi/sb/selfie.jpg", shell = True)
 		print selfieCounter()
     		GPIO.output(lightStrip,0) #activates relay OFF
 def initButt():
-		GPIO.output(led1,1) #LED ON
+		GPIO.output(led3,1) #LED ON
 		time.sleep(0.2)	
-		GPIO.output(led2,1) #LED ON
+		GPIO.output(led3,0) #LED OFF
 		time.sleep(0.2)
 		GPIO.output(led3,1) #LED ON
-		time.sleep(0.2)
+		time.sleep(0.4)
 
 def testButt():
 		initButt()
@@ -113,7 +128,7 @@ def haltCallback(channel):
 	GPIO.cleanup()           # clean up GPIO on normal exit 
 
 # uses threaded callback
-GPIO.add_event_detect(buttSensor, GPIO.RISING, callback=buttCallback, bouncetime=600)
+GPIO.add_event_detect(buttSensor, GPIO.RISING, callback=buttCallback, bouncetime=1800)
 GPIO.add_event_detect(24, GPIO.RISING, callback=haltCallback)
 
 #init
